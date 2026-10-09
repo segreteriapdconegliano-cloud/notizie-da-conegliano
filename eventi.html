@@ -17,19 +17,19 @@ addEventListener('storage',e=>{if(e.key===key){try{read=new Set(JSON.parse(e.new
 const cards=[...document.querySelectorAll('[data-event]')],yearSelect=document.querySelector('#calendar-year'),months=document.querySelector('#calendar-months');
 const names=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-let year=Number(today.slice(0,4)),month=Number(today.slice(5,7))-1;
+let year=Number(today.slice(0,4)),month=Number(today.slice(5,7))-1,selectedDay=null;
 const years=new Set([year-1,year,year+1]);for(const card of cards){for(let y=Number(card.dataset.start.slice(0,4));y<=Number(card.dataset.end.slice(0,4));y++)years.add(y);}
 for(const y of [...years].sort((a,b)=>b-a)){const option=document.createElement('option');option.value=y;option.textContent=y;yearSelect.append(option);}yearSelect.value=year;
 function overlaps(card,start,end){return card.dataset.start<=end&&card.dataset.end>=start;}
-function highlight(card){for(const cell of grid.querySelectorAll('[data-calendar-date]'))cell.classList.toggle('selected',!!card&&cell.dataset.calendarDate>=card.dataset.start&&cell.dataset.calendarDate<=card.dataset.end);}
+function highlight(card){for(const cell of grid.querySelectorAll('[data-calendar-date]')){const active=selectedDay?cell.dataset.calendarDate===selectedDay:!!card&&cell.dataset.calendarDate>=card.dataset.start&&cell.dataset.calendarDate<=card.dataset.end;cell.classList.toggle('selected',active);cell.setAttribute('aria-pressed',String(active));}}
 function render(){const start=year+'-'+String(month+1).padStart(2,'0')+'-01',last=new Date(Date.UTC(year,month+1,0)).getUTCDate(),end=start.slice(0,8)+String(last).padStart(2,'0');
-document.querySelector('#calendar-title').textContent=names[month]+' '+year;document.querySelector('#events-month-title').textContent='Eventi di '+names[month].toLowerCase();
-let count=0;for(const card of cards){card.hidden=!overlaps(card,start,end);if(!card.hidden)count++;else card.open=false;}
-document.querySelector('#events-empty').hidden=count>0;grid.replaceChildren();
+document.querySelector('#calendar-title').textContent=names[month]+' '+year;document.querySelector('#events-month-title').textContent=selectedDay?'Eventi del '+Number(selectedDay.slice(8))+' '+names[month].toLowerCase():'Eventi di '+names[month].toLowerCase();
+let count=0;for(const card of cards){card.hidden=!overlaps(card,selectedDay||start,selectedDay||end);if(!card.hidden)count++;else card.open=false;}
+document.querySelector('#events-empty').hidden=count>0;document.querySelector('#events-empty').textContent=selectedDay?'Nessun evento in questo giorno.':'Nessun evento in questo mese.';grid.replaceChildren();
 const offset=(new Date(Date.UTC(year,month,1)).getUTCDay()+6)%7;for(let i=0;i<offset;i++)grid.append(document.createElement('span'));
-for(let d=1;d<=last;d++){const iso=start.slice(0,8)+String(d).padStart(2,'0'),cell=document.createElement('button');cell.type='button';cell.textContent=d;cell.dataset.calendarDate=iso;cell.className='calendar-day';cell.setAttribute('aria-label',d+' '+names[month]+' '+year);if(iso===today){cell.classList.add('today');cell.setAttribute('aria-current','date');}const matches=cards.filter(c=>overlaps(c,iso,iso));if(matches.length)cell.classList.add('has-event');cell.addEventListener('click',()=>{for(const c of cards)c.open=matches.includes(c);highlight(matches[0]);if(!matches.length){for(const other of grid.children)other.classList.toggle('selected',other===cell);}});grid.append(cell);}
+for(let d=1;d<=last;d++){const iso=start.slice(0,8)+String(d).padStart(2,'0'),cell=document.createElement('button');cell.type='button';cell.textContent=d;cell.dataset.calendarDate=iso;cell.className='calendar-day';cell.setAttribute('aria-label',d+' '+names[month]+' '+year);if(iso===today){cell.classList.add('today');cell.setAttribute('aria-current','date');}const matches=cards.filter(c=>overlaps(c,iso,iso));if(matches.length)cell.classList.add('has-event');cell.addEventListener('click',()=>{selectedDay=selectedDay===iso?null:iso;render();grid.querySelector('[data-calendar-date="'+iso+'"]').focus();});grid.append(cell);}
 for(const button of months.children)button.setAttribute('aria-pressed',String(Number(button.dataset.month)===month));highlight(cards.find(c=>c.open&&!c.hidden));}
-names.forEach((name,i)=>{const button=document.createElement('button');button.textContent=name;button.dataset.month=i;button.type='button';button.addEventListener('click',()=>{month=i;render();});months.append(button);});
-yearSelect.addEventListener('change',()=>{year=Number(yearSelect.value);render();});
+names.forEach((name,i)=>{const button=document.createElement('button');button.textContent=name;button.dataset.month=i;button.type='button';button.addEventListener('click',()=>{month=i;selectedDay=null;render();});months.append(button);});
+yearSelect.addEventListener('change',()=>{year=Number(yearSelect.value);selectedDay=null;render();});
 for(const card of cards)card.addEventListener('toggle',()=>{if(card.open){for(const other of cards)if(other!==card)other.open=false;highlight(card);}else if(!cards.some(c=>c.open))highlight(null);});
 render();})();</script></body></html>
