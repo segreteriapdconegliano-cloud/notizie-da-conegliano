@@ -35,4 +35,25 @@ for(const tag of document.querySelectorAll('[data-tag]'))tag.addEventListener('c
 for(const link of links)link.addEventListener('click',e=>{e.preventDefault();day=link.dataset.day;input.value='';render();});
 render();})();
 </script>
-</body></html>
+<script>
+(()=>{if(location.hostname!=='conews.pages.dev')return;
+const cards=[...document.querySelectorAll('[data-news-id]')];if(!cards.length)return;
+const archiveURL=location.href,archiveTitle=document.title;
+const base=document.createElement('base');base.href=archiveURL;document.head.prepend(base);
+let restoring=false;
+function restoreArchive(){history.replaceState(null,'',archiveURL);document.title=archiveTitle;}
+document.querySelector('#archive-search')?.addEventListener('input',restoreArchive);
+document.addEventListener('click',e=>{if(e.target.closest('[data-day],[data-tag]'))restoreArchive();});
+for(const card of cards){let wasOpen=card.open;
+card.addEventListener('toggle',()=>{const opened=card.open&&!wasOpen;wasOpen=card.open;if(restoring)return;
+if(opened){const link=card.querySelector('.permalink');if(!link)return;
+const target=new URL(link.getAttribute('href'),archiveURL);target.pathname=target.pathname.replace('/notizie/','/aperture/');target.search='';target.hash='';
+document.title=card.querySelector('summary').textContent+' · Notizie da Conegliano';
+try{history.pushState({conewsExpansion:card.dataset.newsId},'',target.href);}catch{document.title=archiveTitle;}
+}else if(!card.open&&history.state?.conewsExpansion===card.dataset.newsId)restoreArchive();
+});}
+addEventListener('popstate',()=>{restoring=true;const id=history.state?.conewsExpansion;
+for(const card of cards)card.open=card.dataset.newsId===id;
+document.title=id?cards.find(c=>c.dataset.newsId===id)?.querySelector('summary').textContent+' · Notizie da Conegliano':archiveTitle;
+setTimeout(()=>{restoring=false;},0);});
+})();</script></body></html>
