@@ -146,7 +146,7 @@ async function takeToken(db, t, kind) {
 async function route(req, env) {
   const url = new URL(req.url), p = url.pathname, db = env.MEMBERS_DB, base = env.SITE_ORIGIN || url.origin;
   if (!db) fail("Servizio utenti non configurato", 503);
-  if (p === "/api/member/runtime" && req.method === "GET") return json({ runtime: false ? "development" : "6632da8692284ff9799cec69b652ef478751aecd8e80e6cd9a7cf3e64ab2287d", routes: { version: 1, include: ["/*"], exclude: [] } });
+  if (p === "/api/member/runtime" && req.method === "GET") return json({ runtime: false ? "development" : "5ce4f86aedd3d32fcfb47d7fae4edfff136105fe210c00d03a0f39b40a4e3cc2", routes: { version: 1, include: ["/*"], exclude: [] } });
   if (p.startsWith("/internal/")) {
     if (req.method !== "POST") fail("Metodo non consentito", 405);
     const mail = p.startsWith("/internal/mail/"), secret = mail ? env.MAIL_TOKEN : env.INGEST_TOKEN;
@@ -184,7 +184,7 @@ async function route(req, env) {
         const salt = token(), u = { id: token(), email: b.email.trim().toLowerCase() };
         const result = await db.prepare("INSERT OR IGNORE INTO members_users(id,username,email,salt,password,created,since) VALUES (?,?,?,?,?,?,?)").bind(u.id, b.username, u.email, salt, await passwordHash(b.password, salt), now(), now()).run();
         if (result.meta.changes) await issue(db, u, "verify", base);
-        return json({ message: "Se i dati sono disponibili, riceverai la conferma email. Controlla anche lo spam." });
+        return json({ message: "Se i dati sono disponibili, riceverai la conferma email. L\u2019arrivo della mail pu\xF2 richiedere fino a 5 minuti. Controlla anche lo spam." });
       }
       if (action === "login") {
         if (typeof b.username !== "string" || b.username.length > 254 || typeof b.password !== "string" || b.password.length > 200) fail("Credenziali non valide", 401);
