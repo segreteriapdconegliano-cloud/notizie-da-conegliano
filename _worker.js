@@ -28,9 +28,10 @@ function validateTime(t) {
 function rome(d) {
   return Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
 }
+var CATCHUP_END = "06:15";
 function cycleAt(d) {
   const p = rome(d), day = `${p.year}-${p.month}-${p.day}`, time = `${p.hour}:${p.minute}`;
-  return { day, time, cycle: time <= "06:00" ? new Date(Date.parse(day + "T12:00:00Z") - 864e5).toISOString().slice(0, 10) : day };
+  return { day, time, cycle: time <= CATCHUP_END ? new Date(Date.parse(day + "T12:00:00Z") - 864e5).toISOString().slice(0, 10) : day };
 }
 function due(time, d) {
   validateTime(time);
@@ -39,7 +40,7 @@ function due(time, d) {
     const [h, m] = t.split(":").map(Number);
     return (h < 12 ? h + 24 : h) * 60 + m;
   };
-  return (p.time >= "18:00" || p.time <= "06:00") && minutes(p.time) >= minutes(time);
+  return (p.time >= "18:00" || p.time <= CATCHUP_END) && minutes(p.time) >= minutes(time);
 }
 var security = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "X-Robots-Tag": "noindex, nofollow", "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" };
 var json = (x, status = 200, extra = {}) => new Response(JSON.stringify(x), { status, headers: { ...security, "Content-Type": "application/json; charset=utf-8", ...extra } });
@@ -131,7 +132,7 @@ async function takeToken(db, t, kind) {
 async function route(req, env) {
   const url = new URL(req.url), p = url.pathname, db = env.MEMBERS_DB, base = env.SITE_ORIGIN || url.origin;
   if (!db) fail("Servizio utenti non configurato", 503);
-  if (p === "/api/member/runtime" && req.method === "GET") return json({ runtime: false ? "development" : "7e666254f3579a59b88927f907d5e180213b6a33d523c8ddbd21283b00ba3b16", routes: { version: 1, include: ["/*"], exclude: [] } });
+  if (p === "/api/member/runtime" && req.method === "GET") return json({ runtime: false ? "development" : "53c028568b8289f5d3429477227716a0fe62463e42b564c8cceb9fb128837466", routes: { version: 1, include: ["/*"], exclude: [] } });
   if (p.startsWith("/internal/")) {
     if (req.method !== "POST") fail("Metodo non consentito", 405);
     const mail = p.startsWith("/internal/mail/"), secret = mail ? env.MAIL_TOKEN : env.INGEST_TOKEN;
