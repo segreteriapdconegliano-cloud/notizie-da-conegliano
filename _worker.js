@@ -1,4 +1,4 @@
-// members/core.mjs
+// outputs/notizie-da-conegliano/members/core.mjs
 var enc = new TextEncoder();
 var now = () => Math.floor(Date.now() / 1e3);
 var token = () => crypto.randomUUID() + crypto.randomUUID();
@@ -98,7 +98,7 @@ async function queueDigests(db, base, date = /* @__PURE__ */ new Date()) {
   return { scanned: users.length };
 }
 
-// members/ui.mjs
+// outputs/notizie-da-conegliano/members/ui.mjs
 var UI = `<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CoNews \xB7 Area personale</title>
 <style>
 :root{color-scheme:light;--ink:#223342;--muted:#586b78;--line:#dce4e9;--blue:#185775;--soft:#eef5f8}
@@ -132,7 +132,7 @@ if(action){$('auth').hidden=true;$('token-panel').hidden=false;$('token-title').
 $('token-form').onsubmit=async e=>{e.preventDefault();try{say((await api(action,{token:linkToken,password:$('new-password').value})).message);$('token-panel').hidden=true;$('auth').hidden=false;}catch(x){say(x.message);}};
 <\/script></html>`;
 
-// members/worker.mjs
+// outputs/notizie-da-conegliano/members/worker.mjs
 async function issue(db, u, kind, base) {
   const t = token(), id = token();
   await db.batch([db.prepare("DELETE FROM members_tokens WHERE user_id=? AND kind=?").bind(u.id, kind), db.prepare("UPDATE members_mail SET status='cancelled' WHERE user_id=? AND kind=? AND status='pending'").bind(u.id, kind), db.prepare("INSERT INTO members_tokens VALUES (?,?,?,?)").bind(await hash(t), u.id, kind, now() + (kind === "verify" ? 86400 : 3600)), db.prepare("INSERT INTO members_mail(id,user_id,kind,recipient,subject,body,created) VALUES (?,?,?,?,?,?,?)").bind(id, u.id, kind, u.email, kind === "verify" ? "CoNews \xB7 Conferma email" : "CoNews \xB7 Recupero password", base + "/account#" + kind + "=" + t, now())]);
